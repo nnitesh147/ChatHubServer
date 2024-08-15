@@ -1,13 +1,16 @@
 {
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "dependencies": {
-    "@prisma/client": "^4.14.0",
+    "@clerk/clerk-sdk-node": "^5.0.26",
+    "@libsql/client": "^0.9.0",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.0.3",
+    "drizzle-orm": "^0.33.0",
     "express": "^4.18.2",
     "multer": "^1.4.5-lts.1",
     "nodemon": "^2.0.20",
@@ -15,5 +18,8 @@
     "socket.io": "^4.6.1",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.24.0"
   }
 }
