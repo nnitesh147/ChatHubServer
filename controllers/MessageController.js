@@ -14,7 +14,7 @@ export const addMessage = async (req, res, next) => {
     }
     await connectDb();
     const getuser = global.onlineUsers.get(to);
-    await MessageModel.insertMany({
+    const data = await MessageModel.insertMany({
       messageStatus: getuser ? "delivered" : "sent",
       messageContent: message,
       messageType: "text",
@@ -26,7 +26,7 @@ export const addMessage = async (req, res, next) => {
     return res.status(200).json({
       status: true,
       authentic: true,
-      data: {},
+      data: data,
       message: "Succesfully-Sent",
     });
   } catch (error) {

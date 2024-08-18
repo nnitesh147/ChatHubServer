@@ -4,6 +4,7 @@ import cors from "cors";
 import authRouter from "./routes/AuthRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import messageRouter from "./routes/MessageRoutes.js";
+import { Server } from "socket.io";
 
 const app = express();
 config({
@@ -20,8 +21,32 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/message", messageRouter);
 
-app.listen(process.env.PORT, () => {
+const server = app.listen(process.env.PORT, () => {
   console.log(`Server is running on ${process.env.PORT}`);
 });
 
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+  },
+});
+
 global.onlineUsers = new Map();
+
+io.on("connection", (socket) => {
+  global.chatSocket = socket;
+  socket.on("add-user", (userId) => {
+    onlineUsers.set(userId, socket.id);
+  });
+
+  socket.on("send-msg", (data) => {
+    console.log(data);
+    const sendUserSocket = onlineUsers.get(data.to);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("msg-recieved", {
+        from: data.from,
+        message: data.message,
+      });
+    }
+  });
+});
