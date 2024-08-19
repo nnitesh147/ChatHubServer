@@ -1,5 +1,6 @@
 import connectDb from "../db2/index.js";
 import MessageModel from "../db2/models/messages.js";
+import { uploadtoS3 } from "../utils/AWS.js";
 
 export const addMessage = async (req, res, next) => {
   try {
@@ -98,6 +99,65 @@ export const getMessage = async (req, res, next) => {
       authentic: true,
       data: { from, to },
       message: "Internal-Server error",
+    });
+  }
+};
+
+export const addImageMessage = async (req, res, next) => {
+  try {
+    if (req.file) {
+      const { originalname, path, mimetype } = req.file;
+
+      const url = await uploadtoS3(path, originalname, mimetype);
+
+      if (url == "error") {
+        return res.status(500).json({
+          status: false,
+          authentic: true,
+          data: {},
+          message: "Internal Server Error in AWS",
+        });
+      }
+
+      await connectDb();
+      const { from, to } = req.query;
+      if (from && to) {
+        const getuser = global.onlineUsers.get(to);
+        const message = await MessageModel.create({
+          messageStatus: getuser ? "delivered" : "sent",
+          messageContent: url,
+          messageType: "image",
+          senderId: from,
+          recieverId: to,
+          createdAt: Date.now(),
+        });
+        return res.status(200).json({
+          status: true,
+          authentic: true,
+          data: message,
+          message: "Succesfully-Sent",
+        });
+      }
+      return res.status(404).json({
+        status: false,
+        authentic: true,
+        data: {},
+        message: "No-sender and reciever  Id",
+      });
+    }
+    return res.status(404).json({
+      status: false,
+      authentic: true,
+      data: {},
+      message: "No-file",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: false,
+      authentic: true,
+      data: {},
+      message: "Internal Server Error",
     });
   }
 };

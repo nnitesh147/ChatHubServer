@@ -13,6 +13,8 @@ config({
 app.use(cors());
 app.use(express.json());
 
+app.use("/uploads/images", express.static("uploads/images"));
+
 app.get("/", (req, res) => {
   res.json("Server is running and healthy");
 });
@@ -40,7 +42,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send-msg", (data) => {
-    console.log(data);
     const sendUserSocket = onlineUsers.get(data.to);
     if (sendUserSocket) {
       socket.to(sendUserSocket).emit("msg-recieved", {

@@ -7,5 +7,6 @@ export const authMiddleware = (req, res, next) => {
       authentic: false,
     });
   }
+
   next();
 };

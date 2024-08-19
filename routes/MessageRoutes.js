@@ -1,8 +1,12 @@
 import { Router } from "express";
-("express");
 import { ClerkExpressWithAuth } from "@clerk/clerk-sdk-node";
 import { authMiddleware } from "../middlewares/AuthMiddleware.js";
-import { addMessage, getMessage } from "../controllers/MessageController.js";
+import {
+  addImageMessage,
+  addMessage,
+  getMessage,
+} from "../controllers/MessageController.js";
+import multer from "multer";
 
 const messageRouter = Router();
 
@@ -18,6 +22,16 @@ messageRouter.get(
   ClerkExpressWithAuth({}),
   authMiddleware,
   getMessage
+);
+
+const uploadImage = multer({ dest: "/tmp" });
+
+messageRouter.post(
+  "/add-image-message",
+  ClerkExpressWithAuth({}),
+  authMiddleware,
+  uploadImage.single("file"),
+  addImageMessage
 );
 
 export default messageRouter;
