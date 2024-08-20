@@ -3,18 +3,22 @@ import { users } from "../db/schema/index.js";
 
 export const getAllUsers = async (req, res, next) => {
   try {
+    const { userId } = req.auth;
+
     const allUsers = await db.select().from(users).orderBy(users.name);
 
     const groupByInitialLetter = {};
 
     allUsers.forEach((user) => {
-      const initialLetter = user.name.charAt(0).toUpperCase();
+      if (user.user_id !== userId) {
+        const initialLetter = user.name.charAt(0).toUpperCase();
 
-      if (!groupByInitialLetter[initialLetter]) {
-        groupByInitialLetter[initialLetter] = [];
+        if (!groupByInitialLetter[initialLetter]) {
+          groupByInitialLetter[initialLetter] = [];
+        }
+
+        groupByInitialLetter[initialLetter].push(user);
       }
-
-      groupByInitialLetter[initialLetter].push(user);
     });
 
     return res.status(200).json({

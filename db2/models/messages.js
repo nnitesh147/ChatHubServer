@@ -1,4 +1,5 @@
 import { date } from "drizzle-orm/mysql-core";
+import { boolean } from "drizzle-orm/pg-core";
 import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema({
@@ -12,6 +13,24 @@ const messageSchema = new mongoose.Schema({
   },
   createdAt: {
     type: Number,
+  },
+  sender: {
+    name: String,
+    user_id: String,
+    profilePicture: String,
+    profileCompleted: boolean,
+    email: String,
+    about: String,
+    createdAt: Number,
+  },
+  reciever: {
+    name: String,
+    user_id: String,
+    profilePicture: String,
+    profileCompleted: boolean,
+    email: String,
+    about: String,
+    createdAt: Number,
   },
 });
 

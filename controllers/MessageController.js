@@ -2,6 +2,10 @@ import connectDb from "../db2/index.js";
 import MessageModel from "../db2/models/messages.js";
 import { uploadtoS3 } from "../utils/AWS.js";
 
+import { db } from "../db/index.js";
+import { users } from "../db/schema/users.js";
+import { eq } from "drizzle-orm";
+
 export const addMessage = async (req, res, next) => {
   try {
     const { from, to, message } = req?.body;
@@ -14,6 +18,10 @@ export const addMessage = async (req, res, next) => {
       });
     }
     await connectDb();
+
+    const sender = await db.select().from(users).where(eq(users.user_id, from));
+    const reciever = await db.select().from(users).where(eq(users.user_id, to));
+
     const getuser = global.onlineUsers.get(to);
     const data = await MessageModel.insertMany({
       messageStatus: getuser ? "delivered" : "sent",
@@ -22,6 +30,8 @@ export const addMessage = async (req, res, next) => {
       senderId: from,
       recieverId: to,
       createdAt: Date.now(),
+      sender: sender[0],
+      reciever: reciever[0],
     });
 
     return res.status(200).json({
@@ -118,31 +128,44 @@ export const addImageMessage = async (req, res, next) => {
           message: "Internal Server Error in AWS",
         });
       }
-
-      await connectDb();
       const { from, to } = req.query;
-      if (from && to) {
-        const getuser = global.onlineUsers.get(to);
-        const message = await MessageModel.create({
-          messageStatus: getuser ? "delivered" : "sent",
-          messageContent: url,
-          messageType: "image",
-          senderId: from,
-          recieverId: to,
-          createdAt: Date.now(),
-        });
-        return res.status(200).json({
-          status: true,
+
+      if (!from || !to) {
+        return res.status(404).json({
+          status: false,
           authentic: true,
-          data: message,
-          message: "Succesfully-Sent",
+          data: {},
+          message: "No-sender and reciever  Id",
         });
       }
-      return res.status(404).json({
-        status: false,
+
+      await connectDb();
+
+      const sender = await db
+        .select()
+        .from(users)
+        .where(eq(users.user_id, from));
+      const reciever = await db
+        .select()
+        .from(users)
+        .where(eq(users.user_id, to));
+
+      const getuser = global.onlineUsers.get(to);
+      const message = await MessageModel.create({
+        messageStatus: getuser ? "delivered" : "sent",
+        messageContent: url,
+        messageType: "image",
+        senderId: from,
+        recieverId: to,
+        createdAt: Date.now(),
+        sender: sender[0],
+        reciever: reciever[0],
+      });
+      return res.status(200).json({
+        status: true,
         authentic: true,
-        data: {},
-        message: "No-sender and reciever  Id",
+        data: message,
+        message: "Succesfully-Sent",
       });
     }
     return res.status(404).json({
@@ -192,6 +215,8 @@ export const getInitialContactswithMessages = async (req, res, next) => {
         messageContent,
         messageType,
         createdAt,
+        sender,
+        reciever,
       } = msg;
 
       if (!usersMap.has(calculatedId)) {
@@ -203,6 +228,8 @@ export const getInitialContactswithMessages = async (req, res, next) => {
           messageContent,
           messageType,
           createdAt,
+          sender,
+          reciever,
         };
         if (isSender) {
           user = {
@@ -212,11 +239,9 @@ export const getInitialContactswithMessages = async (req, res, next) => {
         } else {
           user = {
             ...user,
-
             totalUnreadMessages: messageStatus !== "read" ? 1 : 0,
           };
         }
-
         usersMap.set(calculatedId, { ...user });
       } else if (messageStatus !== "read" && !isSender) {
         const user = usersMap.get(calculatedId);
