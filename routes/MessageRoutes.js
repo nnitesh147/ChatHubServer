@@ -4,6 +4,7 @@ import { authMiddleware } from "../middlewares/AuthMiddleware.js";
 import {
   addImageMessage,
   addMessage,
+  getInitialContactswithMessages,
   getMessage,
 } from "../controllers/MessageController.js";
 import multer from "multer";
@@ -32,6 +33,13 @@ messageRouter.post(
   authMiddleware,
   uploadImage.single("file"),
   addImageMessage
+);
+
+messageRouter.get(
+  "/get-all-initial-contacts/:userId/",
+  ClerkExpressWithAuth({}),
+  authMiddleware,
+  getInitialContactswithMessages
 );
 
 export default messageRouter;

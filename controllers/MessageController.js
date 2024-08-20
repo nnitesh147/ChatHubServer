@@ -161,3 +161,97 @@ export const addImageMessage = async (req, res, next) => {
     });
   }
 };
+
+export const getInitialContactswithMessages = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    await connectDb();
+
+    /// data base - change hone ke baad ek query m dono aayega kunki each contact will store all sent and recieved message
+    const messages = await MessageModel.find({
+      $or: [{ senderId: userId }, { recieverId: userId }],
+    }).sort({
+      createdAt: -1,
+    });
+    const usersMap = new Map();
+    const messageStatusChange = [];
+
+    messages.forEach((msg) => {
+      const isSender = msg.senderId === userId;
+      const calculatedId = isSender ? msg.recieverId : msg.senderId;
+      if (msg.messageStatus === "sent" && !isSender) {
+        messageStatusChange.push(msg._id);
+      }
+
+      const {
+        _id,
+        senderId,
+        recieverId,
+        messageStatus,
+        messageContent,
+        messageType,
+        createdAt,
+      } = msg;
+
+      if (!usersMap.has(calculatedId)) {
+        let user = {
+          messageId: _id,
+          senderId,
+          recieverId,
+          messageStatus,
+          messageContent,
+          messageType,
+          createdAt,
+        };
+        if (isSender) {
+          user = {
+            ...user,
+            totalunreadMessages: 0,
+          };
+        } else {
+          user = {
+            ...user,
+
+            totalUnreadMessages: messageStatus !== "read" ? 1 : 0,
+          };
+        }
+
+        usersMap.set(calculatedId, { ...user });
+      } else if (messageStatus !== "read" && !isSender) {
+        const user = usersMap.get(calculatedId);
+        usersMap.set(calculatedId, {
+          ...user,
+          totalUnreadMessages: user.totalUnreadMessages + 1,
+        });
+      }
+    });
+    if (messageStatusChange.length) {
+      await MessageModel.updateMany(
+        { _id: { $in: messageStatusChange } },
+        {
+          $set: {
+            messageStatus: "delivered",
+          },
+        }
+      );
+    }
+    return res.status(200).json({
+      status: true,
+      authentic: true,
+      data: {
+        users: Array.from(usersMap.values()),
+        onlineUsers: Array.from(onlineUsers.keys()),
+      },
+      message: "Successfully fetched Contacts",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: false,
+      authentic: true,
+      data: {},
+      message: "Internal Server Error",
+    });
+  }
+};
