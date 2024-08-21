@@ -107,7 +107,7 @@ export const getMessage = async (req, res, next) => {
     return res.status(500).json({
       status: false,
       authentic: true,
-      data: { from, to },
+      data: {},
       message: "Internal-Server error",
     });
   }
