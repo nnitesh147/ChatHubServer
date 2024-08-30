@@ -4,8 +4,10 @@ import { authMiddleware } from "../middlewares/AuthMiddleware.js";
 import {
   addImageMessage,
   addMessage,
+  getAllGeminiMessage,
   getInitialContactswithMessages,
   getMessage,
+  sendMessageToGemini,
 } from "../controllers/MessageController.js";
 import multer from "multer";
 
@@ -40,6 +42,20 @@ messageRouter.get(
   ClerkExpressWithAuth({}),
   authMiddleware,
   getInitialContactswithMessages
+);
+
+messageRouter.post(
+  "/sendGeminiMessage",
+  ClerkExpressWithAuth({}),
+  authMiddleware,
+  sendMessageToGemini
+);
+
+messageRouter.get(
+  "/getAllGeminiMessage/:userId",
+  ClerkExpressWithAuth({}),
+  authMiddleware,
+  getAllGeminiMessage
 );
 
 export default messageRouter;
