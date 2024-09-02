@@ -5,13 +5,13 @@ import authRouter from "./routes/AuthRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import messageRouter from "./routes/MessageRoutes.js";
 import { Server } from "socket.io";
+import userWebhookRouter from "./routes/webhookRoutes.js";
 
 const app = express();
 config({
   path: ".env",
 });
 app.use(cors());
-app.use(express.json());
 
 app.use("/uploads/images", express.static("uploads/images"));
 
@@ -19,9 +19,10 @@ app.get("/", (req, res) => {
   res.json("Server is running and healthy");
 });
 
-app.use("/api/auth", authRouter);
-app.use("/api/user", userRouter);
-app.use("/api/message", messageRouter);
+app.use("/api/auth", express.json(), authRouter);
+app.use("/api/user", express.json(), userRouter);
+app.use("/api/message", express.json(), messageRouter);
+app.use("/api/webhooks", userWebhookRouter);
 
 const server = app.listen(process.env.PORT, () => {
   console.log(`Server is running on ${process.env.PORT}`);
