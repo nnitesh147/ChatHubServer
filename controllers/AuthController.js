@@ -18,12 +18,13 @@ export const checkUser = async (req, res, next) => {
       .from(users)
       .where(eq(users.user_id, user_id));
 
-    if (user.length == 0) {
+    if (user.length === 0) {
       return res.json({
         message: "No user_id found",
         status: false,
         data: user,
         authentic: true,
+        onboard: true,
       });
     }
 
@@ -33,6 +34,7 @@ export const checkUser = async (req, res, next) => {
         status: true,
         data: user,
         authentic: true,
+        onboard: false,
       });
     }
     return res.json({
@@ -40,6 +42,7 @@ export const checkUser = async (req, res, next) => {
       status: false,
       data: user,
       authentic: true,
+      onboard: true,
     });
   } catch (error) {
     console.log(error);
@@ -48,6 +51,7 @@ export const checkUser = async (req, res, next) => {
       status: false,
       data: {},
       authentic: true,
+      onboard: true,
     });
   }
 };
@@ -55,48 +59,41 @@ export const checkUser = async (req, res, next) => {
 export const onBoardUser = async (req, res, next) => {
   const { user_id, name, email, about, image: profilePicture } = req.body;
 
-  if (!user_id || !email || !name) {
+  if (!user_id || !name) {
     return res.status(404).json({
       status: false,
       message: "Data is in-sufficient",
-      data: { email, name, about, user_id },
+      data: { name, about, user_id },
       authentic: true,
     });
   }
 
   try {
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.user_id, user_id));
-
-    let userInfo = null;
-
-    if (user.length > 0) {
-      userInfo = await db
-        .update(users)
-        .set({
-          name: name,
-          email: email,
-          about: about,
-          profilePicture: profilePicture,
-          profileCompleted: true,
-        })
-        .where(eq(user[0].user_id, user_id));
-    } else {
-      userInfo = await db.insert(users).values({
-        name: name,
-        email: email,
-        about: about,
-        profileCompleted: true,
-        profilePicture: profilePicture,
+    await db
+      .insert(users)
+      .values({
         user_id: user_id,
+        name: name,
+        email: email ?? "dummy@dummy",
+        about: about,
+        image: profilePicture,
+        profileCompleted: 1,
+      })
+      .onConflictDoUpdate({
+        target: users.user_id,
+        set: {
+          name: name,
+          email: email ?? "dummy@dummy",
+          about: about,
+          image: profilePicture,
+          profileCompleted: 1,
+        },
       });
-    }
+
     return res.status(200).json({
       status: true,
       message: "Data Saved Successfully",
-      data: userInfo,
+      data: {},
       authentic: true,
     });
   } catch (error) {
