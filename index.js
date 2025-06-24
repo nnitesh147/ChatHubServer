@@ -15,6 +15,8 @@ app.use(cors());
 
 app.use("/uploads/images", express.static("uploads/images"));
 
+// new features coming soon
+
 app.get("/", (req, res) => {
   res.json("Server is running and healthy");
 });
